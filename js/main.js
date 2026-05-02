@@ -225,7 +225,9 @@ function loop(now) {
 
 // ---------- 부트 ----------
 window.addEventListener('DOMContentLoaded', () => {
+  detectMobile();
   cacheDom();
+  resizeBoard();        // CELL 결정 (initRender 보다 먼저)
   initRender();
   bindInput();
   resetGame();
@@ -233,8 +235,49 @@ window.addEventListener('DOMContentLoaded', () => {
   State.paused = true;
   showStartOverlay();
   updateDictStatus();
+  window.addEventListener('resize', onViewportResize);
+  window.addEventListener('orientationchange', onViewportResize);
   requestAnimationFrame(loop);
 });
+
+// ---------- 모바일 감지 ----------
+function detectMobile() {
+  const forceMobile = new URLSearchParams(location.search).get('mobile') === '1';
+  const ua = /Mobi|Android|iPhone|iPad|iPod|Tablet|Touch/i.test(navigator.userAgent);
+  const narrow = window.innerWidth <= 850;
+  const isMobile = forceMobile || ua || narrow;
+  document.body.classList.toggle('is-mobile', isMobile);
+  return isMobile;
+}
+
+// ---------- 보드 크기를 화면에 맞춤 ----------
+function resizeBoard() {
+  const isMobile = document.body.classList.contains('is-mobile');
+
+  if (!isMobile) {
+    CELL = 22;
+  } else {
+    // 가로/세로 모두 고려해 CELL 결정
+    const availableW = window.innerWidth - 30;
+    // 위쪽 UI(제목/점수/사운드) + 아이템 패널 + D-pad + 여백
+    const reservedH = 380;
+    const availableH = Math.max(window.innerHeight - reservedH, 240);
+    const byW = Math.floor(availableW / COLS);
+    const byH = Math.floor(availableH / ROWS);
+    CELL = Math.max(14, Math.min(byW, byH, 28));
+  }
+
+  // 캔버스가 이미 만들어졌으면 사이즈 갱신
+  if (typeof canvas !== 'undefined' && canvas) {
+    canvas.width  = COLS * CELL;
+    canvas.height = ROWS * CELL;
+  }
+}
+
+function onViewportResize() {
+  detectMobile();
+  resizeBoard();
+}
 
 function updateDictStatus() {
   if (!ui.dictStatus) return;

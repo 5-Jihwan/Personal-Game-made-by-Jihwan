@@ -115,7 +115,8 @@ function randomSyllable() {
 // ---------- 보드 / 게임 상수 ----------
 const COLS = 12;
 const ROWS = 22;
-const CELL = 22;
+// CELL 은 화면 크기에 따라 동적으로 변경 (main.js의 resizeBoard 참고)
+let CELL = 22;
 
 const FALL_BASE_MS    = 800;   // 시작 낙하 간격
 const FALL_MIN_MS     = 200;   // 최소 낙하 간격

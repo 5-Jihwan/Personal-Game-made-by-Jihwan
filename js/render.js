@@ -28,7 +28,8 @@ const COLOR_WILD     = '#ffd0ff';
 const COLOR_WILD_GLW = '#c878ff';
 const COLOR_ACTIVE_BG = 'rgba(0, 60, 120, 0.45)';
 
-const FONT_SYL = `bold ${CELL - 6}px 'Noto Sans KR', sans-serif`;
+// CELL 이 동적으로 바뀌므로 폰트는 매 프레임 갱신
+function fontSyl() { return `bold ${CELL - 6}px 'Noto Sans KR', sans-serif`; }
 const FONT_BIG = `bold 28px 'Orbitron', 'Noto Sans KR', sans-serif`;
 
 // ---------- 매 프레임 그리기 ----------
@@ -80,7 +81,7 @@ function drawGrid() {
 }
 
 function drawFixed() {
-  ctx.font = FONT_SYL;
+  ctx.font = fontSyl();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -120,7 +121,7 @@ function drawNeonCell(r, c, ch, isActive) {
   const fillColor = isWild ? COLOR_WILD : COLOR_NEON;
   const glowColor = isWild ? COLOR_WILD_GLW : COLOR_GLOW;
 
-  ctx.font = FONT_SYL;
+  ctx.font = fontSyl();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
