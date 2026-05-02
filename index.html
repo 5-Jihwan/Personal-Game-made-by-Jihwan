@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>한글 단어 퍼즐</title>
+<style>
+  :root {
+    --wood-dark: #5a3a1b;
+    --wood-mid: #8b5a2b;
+    --wood-light: #c69963;
+    --wood-pale: #e9d3a9;
+    --wood-edge: #3d2410;
+    --board-bg: #ffffff;
+    --text: #111111;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    color: #2a1a08;
+  }
+
+  body {
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.06) 0 2px,
+        transparent 2px 7px),
+      repeating-linear-gradient(0deg,
+        rgba(255,255,255,0.04) 0 1px,
+        transparent 1px 4px),
+      linear-gradient(180deg, var(--wood-light), var(--wood-mid) 60%, var(--wood-dark));
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .frame {
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.08) 0 3px,
+        transparent 3px 9px),
+      linear-gradient(180deg, #a06a31, #6e421a);
+    border: 6px solid var(--wood-edge);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow:
+      0 14px 40px rgba(0,0,0,0.5),
+      inset 0 0 0 2px rgba(255,255,255,0.1);
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .panel {
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.06) 0 2px,
+        transparent 2px 6px),
+      linear-gradient(180deg, var(--wood-pale), var(--wood-light));
+    border: 3px solid var(--wood-edge);
+    border-radius: 8px;
+    padding: 12px 14px;
+    min-width: 200px;
+    color: #2a1a08;
+  }
+
+  .panel h2 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    border-bottom: 2px solid var(--wood-dark);
+    padding-bottom: 4px;
+  }
+
+  .panel .row {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    font-size: 14px;
+  }
+
+  .panel .row b { font-size: 16px; }
+
+  .items-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .item-btn {
+    background: linear-gradient(180deg, #f5e3bf, #d8b07a);
+    border: 2px solid var(--wood-dark);
+    border-radius: 6px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.05s;
+  }
+  .item-btn:hover { background: linear-gradient(180deg, #fff0d4, #e2bb83); }
+  .item-btn:active { transform: translateY(1px); }
+  .item-btn .key { font-size: 11px; opacity: 0.7; }
+  .item-btn .name { font-size: 13px; font-weight: bold; }
+  .item-btn .count { font-size: 12px; color: #5a3a1b; }
+  .item-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+  .help {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #3d2410;
+  }
+  .help kbd {
+    background: #fff;
+    border: 1px solid var(--wood-dark);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 11px;
+    font-family: monospace;
+  }
+
+  .board-wrap {
+    background: var(--wood-edge);
+    padding: 6px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+  }
+
+  #board {
+    display: block;
+    background: var(--board-bg);
+    border: 2px solid #000;
+  }
+
+  .recent-words {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 13px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--wood-dark);
+    border-radius: 4px;
+    padding: 4px 6px;
+  }
+  .recent-words div { padding: 2px 0; }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .overlay.show { display: flex; }
+  .overlay .box {
+    background: linear-gradient(180deg, var(--wood-pale), var(--wood-light));
+    border: 4px solid var(--wood-edge);
+    border-radius: 12px;
+    padding: 24px 36px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  }
+  .overlay button {
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: var(--wood-mid);
+    color: #fff;
+    border: 2px solid var(--wood-edge);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .overlay button:hover { background: var(--wood-dark); }
+
+  .title {
+    color: var(--wood-pale);
+    text-align: center;
+    margin: 0 0 12px 0;
+    font-size: 22px;
+    text-shadow: 1px 2px 0 #000;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+  <div>
+    <h1 class="title">🌳 한글 우드 퍼즐 🌳</h1>
+    <div class="frame">
+      <div class="panel">
+        <h2>점수판</h2>
+        <div class="row"><span>점수</span><b id="score">0</b></div>
+        <div class="row"><span>레벨</span><b id="level">1</b></div>
+        <div class="row"><span>완성 단어</span><b id="wordCount">0</b></div>
+        <div class="row"><span>동시 낙하</span><b id="dropCount">1</b></div>
+
+        <h2 style="margin-top:14px;">최근 완성</h2>
+        <div class="recent-words" id="recentWords"></div>
+
+        <h2 style="margin-top:14px;">조작</h2>
+        <div class="help">
+          <div><kbd>←</kbd> <kbd>→</kbd> 이동</div>
+          <div><kbd>↓</kbd> 빠르게 내리기</div>
+          <div><kbd>스페이스</kbd> 즉시 낙하</div>
+          <div><kbd>P</kbd> 일시정지</div>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <canvas id="board"></canvas>
+      </div>
+
+      <div class="panel">
+        <h2>아이템</h2>
+        <div class="help" style="margin-bottom:6px;">
+          현재 떨어지는 음절에 적용
+        </div>
+        <div class="items-grid">
+          <div class="item-btn" data-item="cho" id="item-cho">
+            <div class="key">[1]</div>
+            <div class="name">자음 변경</div>
+            <div class="count">×<span id="cnt-cho">2</span></div>
+          </div>
+          <div class="item-btn" data-item="jung" id="item-jung">
+            <div class="key">[2]</div>
+            <div class="name">모음 변경</div>
+            <div class="count">×<span id="cnt-jung">2</span></div>
+          </div>
+          <div class="item-btn" data-item="stop" id="item-stop">
+            <div class="key">[3]</div>
+            <div class="name">STOP</div>
+            <div class="count">×<span id="cnt-stop">1</span></div>
+          </div>
+          <div class="item-btn" data-item="wild" id="item-wild">
+            <div class="key">[4]</div>
+            <div class="name">만능 글자</div>
+            <div class="count">×<span id="cnt-wild">1</span></div>
+          </div>
+        </div>
+
+        <h2 style="margin-top:14px;">규칙</h2>
+        <div class="help">
+          가로로 인접한 음절들이 사전 단어가 되면 사라집니다.
+          단어가 길수록 더 많은 점수와 아이템 획득!
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="box">
+      <h2 id="overlayTitle">게임 오버</h2>
+      <p id="overlayMsg">최종 점수: 0</p>
+      <button id="restartBtn">다시 시작</button>
+    </div>
+  </div>
+
+<script>
+// ============ 한글 처리 ============
+const CHO  = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+function compose(cho, jung, jong = 0) {
+  return String.fromCharCode(0xAC00 + (cho * 21 + jung) * 28 + jong);
+}
+function decompose(s) {
+  if (!s || s === WILD) return null;
+  const code = s.charCodeAt(0) - 0xAC00;
+  if (code < 0 || code > 11171) return null;
+  return { cho: Math.floor(code / 588), jung: Math.floor((code % 588) / 28), jong: code % 28 };
+}
+
+// ============ 사전 (자주 쓰이는 한글 단어) ============
+const DICTIONARY = [
+  // 2글자
+  '사과','포도','수박','참외','딸기','사람','학교','학생','선생','친구',
+  '가족','동생','형제','자매','우리','한국','서울','부산','나무','꽃잎',
+  '풀잎','바다','하늘','구름','바람','태양','별빛','달빛','산책','여행',
+  '음식','요리','김치','국수','라면','치킨','피자','커피','우유','과일',
+  '책상','의자','가방','신발','옷장','거울','시계','전화','노트','연필',
+  '토끼','사자','기린','참새','오리','빨강','파랑','노랑','초록','보라',
+  '검정','하양','회색','분홍','주황','은빛','금빛','사랑','우정','행복',
+  '희망','평화','용기','지혜','진심','노력','성공','도전','아침','점심',
+  '저녁','오늘','내일','어제','주말','휴일','시간','순간','계절','봄날',
+  '여름','가을','겨울','단풍','새싹','꽃길','달님','해님','구슬','보석',
+  '편지','선물','축하','기념','파티','음악','노래','영화','연극','그림',
+  '사진','바위','모래','조개','파도','물결','호수','폭포','동굴','언덕',
+  '계곡','도로','다리','터널','마을','도시','시골','공원','광장','시장',
+  '상점','카페','식당','사슴','상어','고래','가위','바늘','단추','종이',
+  '공책','자석','거품','비누','약국','병원','학원','교회','절벽','운동',
+  '수영','등산','낚시','캠핑','요가',
+  // 3글자
+  '바나나','복숭아','어머니','아버지','할머니','할아버','강아지','고양이','호랑이','코끼리',
+  '원숭이','독수리','비둘기','다람쥐','너구리','오소리','두더지','거북이','개구리','뱀장어',
+  '돌고래','금붕어','도서관','박물관','미술관','체육관','놀이터','어린이','대학생','선생님',
+  '경찰서','소방서','백화점','편의점','자동차','자전거','오토바','비행기','지하철','우주선',
+  '잠수함','파이팅','아이스','초콜릿','케이크','햄버거','떡볶이','크레용','색종이','돌멩이',
+  '시냇물','눈송이','별자리',
+];
+
+// 사전 단어를 길이별 Set 으로 미리 생성
+const DICT_SETS = {};
+for (const w of DICTIONARY) {
+  if (!DICT_SETS[w.length]) DICT_SETS[w.length] = new Set();
+  DICT_SETS[w.length].add(w);
+}
+const DICT_LENGTHS = Object.keys(DICT_SETS).map(Number).sort((a,b)=>b-a); // 긴 단어 우선
+
+// 사전에 등장하는 음절들로 풀 구성 (가중치)
+const SYLLABLE_WEIGHTS = {};
+for (const w of DICTIONARY) {
+  for (const ch of w) {
+    SYLLABLE_WEIGHTS[ch] = (SYLLABLE_WEIGHTS[ch] || 0) + 1;
+  }
+}
+const SYLLABLE_POOL = [];
+for (const [s, w] of Object.entries(SYLLABLE_WEIGHTS)) {
+  for (let i = 0; i < w; i++) SYLLABLE_POOL.push(s);
+}
+
+const WILD = '★';
+
+function randomSyllable() {
+  return SYLLABLE_POOL[Math.floor(Math.random() * SYLLABLE_POOL.length)];
+}
+
+// ============ 게임 설정 ============
+const COLS = 12;
+const ROWS = 50;
+const CELL = 22;
+
+const canvas = document.getElementById('board');
+canvas.width = COLS * CELL;
+canvas.height = ROWS * CELL;
+const ctx = canvas.getContext('2d');
+
+let grid = [];     // 고정된 음절 [row][col]
+let active = [];   // 현재 떨어지는 음절 [{row, col, ch}]
+let score = 0;
+let level = 1;
+let wordCount = 0;
+let dropCount = 1;        // 동시 낙하 개수 (난이도)
+let fallInterval = 800;   // ms
+let lastFall = 0;
+let stopTimer = 0;        // STOP 아이템 잔여 시간
+let paused = false;
+let gameOver = false;
+let recentWords = [];
+
+let items = { cho: 2, jung: 2, stop: 1, wild: 1 };
+
+function resetGame() {
+  grid = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+  active = [];
+  score = 0;
+  level = 1;
+  wordCount = 0;
+  dropCount = 1;
+  fallInterval = 800;
+  stopTimer = 0;
+  paused = false;
+  gameOver = false;
+  recentWords = [];
+  items = { cho: 2, jung: 2, stop: 1, wild: 1 };
+  spawn();
+  updateUI();
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ============ 활성 블록 생성 ============
+function spawn() {
+  const n = dropCount;
+  const usedCols = new Set();
+  active = [];
+  for (let i = 0; i < n; i++) {
+    let col;
+    let tries = 0;
+    do {
+      col = Math.floor(Math.random() * COLS);
+      tries++;
+    } while (usedCols.has(col) && tries < 30);
+    usedCols.add(col);
+    if (grid[0][col] !== null) {
+      gameOver = true;
+      showOverlay('게임 오버', `최종 점수: ${score}`);
+      return;
+    }
+    active.push({ row: 0, col, ch: randomSyllable() });
+  }
+}
+
+// ============ 충돌 / 이동 ============
+function canMove(dr, dc) {
+  for (const a of active) {
+    const nr = a.row + dr;
+    const nc = a.col + dc;
+    if (nc < 0 || nc >= COLS || nr >= ROWS) return false;
+    if (nr < 0) continue;
+    if (grid[nr][nc] !== null && !active.some(b => b.row === nr && b.col === nc)) return false;
+  }
+  return true;
+}
+
+function moveActive(dr, dc) {
+  if (gameOver || paused) return false;
+  if (!canMove(dr, dc)) return false;
+  for (const a of active) { a.row += dr; a.col += dc; }
+  return true;
+}
+
+function landActive() {
+  // 활성 블록을 그리드에 고정 (낙하순서대로 정렬)
+  const sorted = [...active].sort((a, b) => b.row - a.row);
+  for (const a of sorted) {
+    if (a.row < 0) {
+      gameOver = true;
+      showOverlay('게임 오버', `최종 점수: ${score}`);
+      return;
+    }
+    grid[a.row][a.col] = a.ch;
+  }
+  active = [];
+  checkWords();
+  if (!gameOver) {
+    // 레벨업 / 동시낙하 증가
+    if (wordCount > 0 && wordCount % 5 === 0) {
+      level = 1 + Math.floor(wordCount / 5);
+      dropCount = Math.min(1 + Math.floor(wordCount / 8), 4);
+      fallInterval = Math.max(200, 800 - level * 40);
+    }
+    spawn();
+  }
+}
+
+// ============ 단어 매칭 (가로) ============
+function matchAt(row, startCol, len) {
+  if (startCol + len > COLS) return null;
+  let s = '';
+  for (let c = startCol; c < startCol + len; c++) {
+    const ch = grid[row][c];
+    if (ch === null) return null;
+    s += ch;
+  }
+  // 만능 글자(★) 처리: ★를 임의의 문자로 치환해 사전과 매칭
+  if (s.includes(WILD)) {
+    const set = DICT_SETS[len];
+    if (!set) return null;
+    for (const word of set) {
+      let ok = true;
+      for (let i = 0; i < len; i++) {
+        if (s[i] !== WILD && s[i] !== word[i]) { ok = false; break; }
+      }
+      if (ok) return word;
+    }
+    return null;
+  }
+  const set = DICT_SETS[len];
+  if (set && set.has(s)) return s;
+  return null;
+}
+
+function checkWords() {
+  let cleared = false;
+  do {
+    cleared = false;
+    for (let r = 0; r < ROWS; r++) {
+      for (const len of DICT_LENGTHS) {
+        for (let c = 0; c <= COLS - len; c++) {
+          const word = matchAt(r, c, len);
+          if (word) {
+            // 클리어
+            for (let k = 0; k < len; k++) grid[r][c + k] = null;
+            const points = len * len * 100;
+            score += points;
+            wordCount++;
+            recentWords.unshift(`${word} +${points}`);
+            if (recentWords.length > 8) recentWords.pop();
+            // 길이에 따라 아이템 보상
+            rewardItems(len);
+            cleared = true;
+            break;
+          }
+        }
+        if (cleared) break;
+      }
+      if (cleared) break;
+    }
+    if (cleared) applyGravity();
+  } while (cleared);
+}
+
+function applyGravity() {
+  for (let c = 0; c < COLS; c++) {
+    let writeRow = ROWS - 1;
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (grid[r][c] !== null) {
+        const v = grid[r][c];
+        grid[r][c] = null;
+        grid[writeRow][c] = v;
+        writeRow--;
+      }
+    }
+  }
+}
+
+function rewardItems(len) {
+  if (len >= 2) {
+    if (Math.random() < 0.5) items.cho++;
+    if (Math.random() < 0.5) items.jung++;
+  }
+  if (len >= 3) {
+    if (Math.random() < 0.4) items.stop++;
+    if (Math.random() < 0.25) items.wild++;
+  }
+}
+
+// ============ 아이템 ============
+function useItem(type) {
+  if (gameOver || paused) return;
+  if ((items[type] || 0) <= 0) return;
+  if (active.length === 0) return;
+  const target = active[0];
+  const d = decompose(target.ch);
+
+  if (type === 'cho') {
+    if (!d) return;
+    const newCho = (d.cho + 1 + Math.floor(Math.random() * (CHO.length - 1))) % CHO.length;
+    target.ch = compose(newCho, d.jung, d.jong);
+    items.cho--;
+  } else if (type === 'jung') {
+    if (!d) return;
+    const newJung = (d.jung + 1 + Math.floor(Math.random() * (JUNG.length - 1))) % JUNG.length;
+    target.ch = compose(d.cho, newJung, d.jong);
+    items.jung--;
+  } else if (type === 'stop') {
+    stopTimer = 4000; // 4초 정지
+    items.stop--;
+  } else if (type === 'wild') {
+    target.ch = WILD;
+    items.wild--;
+  }
+  updateUI();
+}
+
+// ============ 렌더링 ============
+function draw() {
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 격자선
+  ctx.strokeStyle = '#eeeeee';
+  ctx.lineWidth = 1;
+  for (let c = 1; c < COLS; c++) {
+    ctx.beginPath();
+    ctx.moveTo(c * CELL + 0.5, 0);
+    ctx.lineTo(c * CELL + 0.5, canvas.height);
+    ctx.stroke();
+  }
+  for (let r = 1; r < ROWS; r++) {
+    ctx.beginPath();
+    ctx.moveTo(0, r * CELL + 0.5);
+    ctx.lineTo(canvas.width, r * CELL + 0.5);
+    ctx.stroke();
+  }
+
+  // 고정된 음절
+  ctx.font = `bold ${CELL - 6}px 'Noto Sans KR', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = grid[r][c];
+      if (ch !== null) drawCell(r, c, ch, '#000', false);
+    }
+  }
+
+  // 활성 음절
+  for (const a of active) {
+    if (a.row >= 0) drawCell(a.row, a.col, a.ch, '#000', true);
+  }
+
+  // STOP 표시
+  if (stopTimer > 0) {
+    ctx.fillStyle = 'rgba(255, 200, 0, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#b8860b';
+    ctx.font = `bold 28px 'Noto Sans KR', sans-serif`;
+    ctx.fillText('STOP ' + (stopTimer / 1000).toFixed(1) + 's', canvas.width / 2, 40);
+  }
+
+  if (paused) {
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold 28px 'Noto Sans KR', sans-serif`;
+    ctx.fillText('일시정지', canvas.width / 2, canvas.height / 2);
+  }
+}
+
+function drawCell(r, c, ch, color, isActive) {
+  const x = c * CELL;
+  const y = r * CELL;
+  if (isActive) {
+    ctx.fillStyle = '#fff7d6';
+    ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+    ctx.strokeStyle = '#a06a31';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 1.5, y + 1.5, CELL - 3, CELL - 3);
+  }
+  ctx.fillStyle = ch === WILD ? '#c8a200' : color;
+  ctx.font = `bold ${CELL - 6}px 'Noto Sans KR', sans-serif`;
+  ctx.fillText(ch, x + CELL / 2, y + CELL / 2 + 1);
+}
+
+// ============ 루프 ============
+function tick(now) {
+  if (!gameOver) {
+    if (!paused) {
+      if (stopTimer > 0) {
+        stopTimer -= now - lastTickTime;
+        if (stopTimer < 0) stopTimer = 0;
+      } else if (now - lastFall > fallInterval) {
+        if (!moveActive(1, 0)) landActive();
+        lastFall = now;
+      }
+    }
+    draw();
+    updateUI();
+  }
+  lastTickTime = now;
+  requestAnimationFrame(tick);
+}
+let lastTickTime = 0;
+
+// ============ UI ============
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level').textContent = level;
+  document.getElementById('wordCount').textContent = wordCount;
+  document.getElementById('dropCount').textContent = dropCount;
+  document.getElementById('cnt-cho').textContent = items.cho;
+  document.getElementById('cnt-jung').textContent = items.jung;
+  document.getElementById('cnt-stop').textContent = items.stop;
+  document.getElementById('cnt-wild').textContent = items.wild;
+
+  for (const t of ['cho', 'jung', 'stop', 'wild']) {
+    const el = document.getElementById('item-' + t);
+    if (items[t] <= 0) el.setAttribute('disabled', '');
+    else el.removeAttribute('disabled');
+  }
+
+  const rw = document.getElementById('recentWords');
+  rw.innerHTML = recentWords.map(w => `<div>${w}</div>`).join('') || '<div style="opacity:0.5;">아직 없음</div>';
+}
+
+function showOverlay(title, msg) {
+  document.getElementById('overlayTitle').textContent = title;
+  document.getElementById('overlayMsg').textContent = msg;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ============ 입력 ============
+document.addEventListener('keydown', (e) => {
+  if (gameOver) return;
+  switch (e.key) {
+    case 'ArrowLeft':  moveActive(0, -1); e.preventDefault(); break;
+    case 'ArrowRight': moveActive(0, 1);  e.preventDefault(); break;
+    case 'ArrowDown':
+      if (!moveActive(1, 0)) landActive();
+      lastFall = performance.now();
+      e.preventDefault();
+      break;
+    case ' ':
+      while (moveActive(1, 0)) {}
+      landActive();
+      lastFall = performance.now();
+      e.preventDefault();
+      break;
+    case 'p': case 'P': paused = !paused; break;
+    case '1': useItem('cho'); break;
+    case '2': useItem('jung'); break;
+    case '3': useItem('stop'); break;
+    case '4': useItem('wild'); break;
+  }
+});
+
+document.querySelectorAll('.item-btn').forEach(btn => {
+  btn.addEventListener('click', () => useItem(btn.dataset.item));
+});
+
+document.getElementById('restartBtn').addEventListener('click', resetGame);
+
+// ============ 시작 ============
+resetGame();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
