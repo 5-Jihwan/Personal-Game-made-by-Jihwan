@@ -44,8 +44,16 @@
         </div>
       </div>
 
-      <div class="board-wrap">
-        <canvas id="board"></canvas>
+      <div class="board-col">
+        <div class="board-wrap">
+          <canvas id="board"></canvas>
+        </div>
+        <div class="touch-controls" id="touchControls">
+          <button class="tc-btn" data-action="left" aria-label="왼쪽">◀</button>
+          <button class="tc-btn" data-action="down" aria-label="아래">▼</button>
+          <button class="tc-btn" data-action="drop" aria-label="즉시 낙하">⏬</button>
+          <button class="tc-btn" data-action="right" aria-label="오른쪽">▶</button>
+        </div>
       </div>
 
       <div class="panel right-panel">

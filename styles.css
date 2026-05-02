@@ -32,6 +32,8 @@ html, body {
   color: var(--text-bright);
   font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
   overflow-x: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ---------- Background grid + glow ---------- */
@@ -368,4 +370,99 @@ kbd {
   border-color: #2a3540;
   text-shadow: none;
   box-shadow: none;
+}
+
+/* ============================================================
+   터치 컨트롤 (모바일 / 태블릿)
+   ============================================================ */
+.board-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.touch-controls {
+  display: none;
+  width: 100%;
+  max-width: 320px;
+  gap: 8px;
+}
+.tc-btn {
+  flex: 1;
+  height: 56px;
+  font-size: 24px;
+  font-family: inherit;
+  color: var(--neon-pale);
+  background: linear-gradient(180deg, rgba(8,30,70,0.85), rgba(2,8,20,0.9));
+  border: 1px solid var(--neon-cyan);
+  border-radius: 8px;
+  text-shadow: 0 0 6px var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(0,240,255,0.4),
+              inset 0 0 6px rgba(0,240,255,0.2);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.05s, background 0.1s;
+}
+.tc-btn:active {
+  transform: scale(0.96);
+  background: linear-gradient(180deg, rgba(20,80,180,0.95), rgba(8,20,60,0.95));
+  box-shadow: 0 0 14px var(--neon-cyan),
+              inset 0 0 12px rgba(0,240,255,0.4);
+}
+
+/* ============================================================
+   모바일 레이아웃 (≤ 850px)
+   ============================================================ */
+@media (max-width: 850px) {
+  body { padding: 0; }
+  .container { padding: 6px 6px 16px; }
+
+  .neon-title { font-size: 22px; letter-spacing: 4px; }
+  .subtitle { font-size: 9px; letter-spacing: 6px; }
+
+  .frame {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 6px;
+    padding: 8px;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .panel {
+    width: auto;
+    padding: 8px 10px 10px;
+  }
+
+  .panel .neon-h2 { font-size: 11px; letter-spacing: 2px; }
+
+  /* 좌측 패널: 점수/사운드만 보이고 컨트롤 안내는 숨김 (터치 버튼 사용) */
+  .left-panel .help { display: none; }
+
+  /* 보드는 좌우 가운데 정렬 */
+  .board-col { align-items: center; }
+  .board-wrap { padding: 4px; }
+
+  /* 터치 컨트롤 항상 표시 */
+  .touch-controls { display: flex; }
+
+  .recent-words { max-height: 80px; }
+
+  .items-grid { gap: 6px; }
+  .item-btn { padding: 8px 4px; }
+  .item-btn .name { font-size: 11px; }
+
+  .audio-row { flex-wrap: wrap; }
+}
+
+/* 매우 작은 화면 (≤ 360px) */
+@media (max-width: 360px) {
+  .neon-title { font-size: 18px; letter-spacing: 3px; }
+  .subtitle { display: none; }
+  .tc-btn { height: 48px; font-size: 20px; }
+  .board-wrap { padding: 3px; }
 }

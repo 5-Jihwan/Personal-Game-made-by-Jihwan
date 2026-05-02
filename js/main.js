@@ -126,6 +126,57 @@ function bindInput() {
     ui.sfxBtn.classList.toggle('off', !on);
     ui.sfxBtn.textContent = on ? 'SFX ♪' : 'SFX ✕';
   });
+
+  bindTouchControls(ensureAudio);
+}
+
+// ---------- 터치 컨트롤 (모바일) ----------
+// 누르고 있으면 일정 간격으로 반복 (좌/우/아래만), 즉시 낙하는 1회.
+function bindTouchControls(ensureAudio) {
+  const tc = document.getElementById('touchControls');
+  if (!tc) return;
+
+  const actionMap = {
+    left:  () => moveActive(0, -1) && sfxMove(),
+    right: () => moveActive(0,  1) && sfxMove(),
+    down:  () => {
+      if (!moveActive(1, 0)) { landActive(); sfxLand(); }
+      State.lastFall = performance.now();
+    },
+    drop:  () => { hardDrop(); sfxLand(); },
+  };
+
+  for (const btn of tc.querySelectorAll('.tc-btn')) {
+    const action = actionMap[btn.dataset.action];
+    if (!action) continue;
+
+    let repeatTimer = null;
+    let repeatStart = null;
+
+    const start = (e) => {
+      e.preventDefault();
+      ensureAudio();
+      if (State.gameOver || State.paused) return;
+      action();
+      // 즉시 낙하(drop)는 반복 안 함
+      if (btn.dataset.action === 'drop') return;
+      // 250ms 후부터 100ms 간격으로 반복
+      repeatStart = setTimeout(() => {
+        repeatTimer = setInterval(action, 100);
+      }, 250);
+    };
+    const stop = () => {
+      if (repeatStart) { clearTimeout(repeatStart); repeatStart = null; }
+      if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null; }
+    };
+
+    btn.addEventListener('touchstart', start, { passive: false });
+    btn.addEventListener('touchend',   stop);
+    btn.addEventListener('touchcancel',stop);
+    btn.addEventListener('mousedown',  start);
+    btn.addEventListener('mouseup',    stop);
+    btn.addEventListener('mouseleave', stop);
+  }
 }
 
 // ---------- 게임 이벤트 콜백 (game.js 에서 호출) ----------
