@@ -121,6 +121,7 @@ function landActive() {
     State.grid[a.row][a.col] = a.ch;
   }
   State.active = [];
+  if (typeof onLand === 'function') onLand();
   checkWords();
 
   if (!State.gameOver) {
@@ -183,6 +184,7 @@ function checkWords() {
           const word = matchAt(r, c, len);
           if (word) {
             State.combo++;
+            console.log(`[match] row=${r} col=${c} len=${len} → "${word}"`);
             clearMatch(r, c, len, word);
             cleared = true;
             break outer;
@@ -195,8 +197,12 @@ function checkWords() {
 
   if (State.combo > 0) {
     State.lastCombo = State.combo;
-    State.comboFlash = 1200; // 1.2초 콤보 표시
+    State.comboFlash = 1200;
     if (typeof onCombo === 'function') onCombo(State.combo);
+  } else {
+    // 아무 단어도 매칭되지 않은 경우 디버깅용으로 마지막 행 상태 출력
+    const dictName = window.DICT_SETS_FULL ? 'FULL' : 'SMALL';
+    console.log(`[match] no match (dict=${dictName}, last row:`, State.grid[ROWS - 1].join(' '), ')');
   }
 }
 

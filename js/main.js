@@ -109,7 +109,9 @@ function bindInput() {
   ui.restart.addEventListener('click', () => {
     ensureAudio();
     hideOverlay();
-    resetGame();
+    // 시작 또는 재시작
+    if (State.gameOver) resetGame();
+    State.paused = false;
   });
 
   if (ui.bgmBtn) ui.bgmBtn.addEventListener('click', () => {
@@ -126,7 +128,10 @@ function bindInput() {
   });
 }
 
-// ---------- 게임 이벤트 콜백 ----------
+// ---------- 게임 이벤트 콜백 (game.js 에서 호출) ----------
+function onLand() {
+  sfxLand();
+}
 function onWordCleared(len, combo) {
   sfxClear(combo, len);
 }
@@ -135,10 +140,11 @@ function onCombo(combo) {
 }
 
 // ---------- 오버레이 제어 ----------
-function showOverlay(title, msg) {
+function showOverlay(title, msg, btnLabel) {
   ui.overlayTitle.textContent = title;
   ui.overlayTitle.setAttribute('data-text', title);
   ui.overlayMsg.textContent = msg;
+  if (btnLabel) ui.restart.textContent = btnLabel;
   ui.overlay.classList.add('show');
 }
 
@@ -149,7 +155,12 @@ function hideOverlay() {
 // 게임 오버 콜백 (game.js 에서 호출)
 function onGameOver() {
   sfxGameOver();
-  showOverlay('GAME OVER', `최종 점수: ${State.score.toLocaleString()}`);
+  showOverlay('GAME OVER', `최종 점수: ${State.score.toLocaleString()}`, '다시 시작');
+}
+
+// 시작 오버레이 — 사용자 클릭으로 오디오 컨텍스트 활성화
+function showStartOverlay() {
+  showOverlay('NEON HANGUL', '클릭해서 시작 (BGM 켜기)', 'START');
 }
 
 // ---------- 메인 루프 ----------
@@ -167,7 +178,9 @@ window.addEventListener('DOMContentLoaded', () => {
   initRender();
   bindInput();
   resetGame();
-  hideOverlay();
+  // 일시정지 상태로 시작해서 클릭 후 시작
+  State.paused = true;
+  showStartOverlay();
   updateDictStatus();
   requestAnimationFrame(loop);
 });
@@ -176,10 +189,13 @@ function updateDictStatus() {
   if (!ui.dictStatus) return;
   const full = window.DICT_SETS_FULL;
   if (!full) {
-    ui.dictStatus.textContent = '기본 사전 (소형)';
+    ui.dictStatus.textContent = '⚠ 기본 사전 (dict.js 미로드)';
+    console.warn('[dict] FULL dict not loaded; fallback to small built-in');
     return;
   }
   let n = 0;
   for (const k of Object.keys(full)) n += full[k].size;
   ui.dictStatus.textContent = `표준국어대사전 ${n.toLocaleString()}개`;
+  console.log(`[dict] loaded: ${n.toLocaleString()} entries, sizes:`,
+              Object.fromEntries(Object.entries(full).map(([k, v]) => [k, v.size])));
 }

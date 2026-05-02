@@ -17,26 +17,43 @@ const Audio = {
 };
 
 function audioInit() {
-  if (Audio.started) return;
+  if (Audio.started) {
+    // 이미 시작된 컨텍스트가 다시 suspended 상태가 되면 resume
+    if (Audio.ctx && Audio.ctx.state === 'suspended') {
+      Audio.ctx.resume().then(() => console.log('[audio] resumed'));
+    }
+    return;
+  }
   try {
     const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { console.warn('[audio] AudioContext not supported'); return; }
     Audio.ctx = new AC();
+
+    // 브라우저 자동재생 정책: 사용자 제스처 직후 resume 호출 필수
+    if (Audio.ctx.state === 'suspended') {
+      Audio.ctx.resume().then(
+        () => console.log('[audio] resumed, state =', Audio.ctx.state),
+        (err) => console.warn('[audio] resume failed', err)
+      );
+    }
+
     Audio.master = Audio.ctx.createGain();
-    Audio.master.gain.value = 0.7;
+    Audio.master.gain.value = 1.0;
     Audio.master.connect(Audio.ctx.destination);
 
     Audio.bgmGain = Audio.ctx.createGain();
-    Audio.bgmGain.gain.value = Audio.bgmEnabled ? 0.18 : 0;
+    Audio.bgmGain.gain.value = Audio.bgmEnabled ? 0.30 : 0;
     Audio.bgmGain.connect(Audio.master);
 
     Audio.sfxGain = Audio.ctx.createGain();
-    Audio.sfxGain.gain.value = Audio.sfxEnabled ? 0.5 : 0;
+    Audio.sfxGain.gain.value = Audio.sfxEnabled ? 0.7 : 0;
     Audio.sfxGain.connect(Audio.master);
 
     Audio.started = true;
+    console.log('[audio] init ok, state =', Audio.ctx.state);
     if (Audio.bgmEnabled) startBGM();
   } catch (e) {
-    console.warn('Audio unavailable', e);
+    console.warn('[audio] init failed', e);
   }
 }
 
@@ -181,7 +198,7 @@ function playBgmStep() {
 function toggleBGM() {
   Audio.bgmEnabled = !Audio.bgmEnabled;
   if (!Audio.started) audioInit();
-  if (Audio.bgmGain) Audio.bgmGain.gain.value = Audio.bgmEnabled ? 0.18 : 0;
+  if (Audio.bgmGain) Audio.bgmGain.gain.value = Audio.bgmEnabled ? 0.30 : 0;
   if (Audio.bgmEnabled && !Audio.bgmTimer) startBGM();
   if (!Audio.bgmEnabled) stopBGM();
   return Audio.bgmEnabled;
@@ -189,6 +206,6 @@ function toggleBGM() {
 
 function toggleSFX() {
   Audio.sfxEnabled = !Audio.sfxEnabled;
-  if (Audio.sfxGain) Audio.sfxGain.gain.value = Audio.sfxEnabled ? 0.5 : 0;
+  if (Audio.sfxGain) Audio.sfxGain.gain.value = Audio.sfxEnabled ? 0.7 : 0;
   return Audio.sfxEnabled;
 }
