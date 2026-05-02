@@ -114,7 +114,7 @@ function randomSyllable() {
 
 // ---------- 보드 / 게임 상수 ----------
 const COLS = 12;
-const ROWS = 50;
+const ROWS = 22;
 const CELL = 22;
 
 const FALL_BASE_MS    = 800;   // 시작 낙하 간격

@@ -64,18 +64,18 @@ html, body {
 
 /* ---------- Layout ---------- */
 .container {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  padding: 10px 16px 16px;
   text-align: center;
 }
 
 .frame {
-  margin-top: 18px;
+  margin-top: 8px;
   display: inline-flex;
-  gap: 18px;
+  gap: 14px;
   align-items: flex-start;
-  padding: 16px;
+  padding: 12px;
   border: 1px solid var(--neon-blue);
   border-radius: 12px;
   background: linear-gradient(180deg, rgba(7,9,26,0.85), rgba(2,3,10,0.95));
@@ -91,13 +91,13 @@ html, body {
   margin: 0;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
-  font-size: 56px;
-  letter-spacing: 8px;
+  font-size: 32px;
+  letter-spacing: 6px;
   color: var(--neon-pale);
   text-shadow: var(--glow-strong);
   animation: titleFlicker 4.5s infinite;
 }
-.neon-title.small { font-size: 32px; letter-spacing: 4px; }
+.neon-title.small { font-size: 24px; letter-spacing: 3px; }
 
 .neon-title::before {
   content: attr(data-text);
@@ -115,10 +115,10 @@ html, body {
 }
 
 .subtitle {
-  margin-top: 6px;
+  margin-top: 2px;
   font-family: 'Orbitron', sans-serif;
-  letter-spacing: 12px;
-  font-size: 13px;
+  letter-spacing: 10px;
+  font-size: 11px;
   color: var(--neon-cyan);
   text-shadow: 0 0 8px var(--neon-cyan);
   opacity: 0.85;
@@ -126,8 +126,8 @@ html, body {
 
 /* ---------- Panels ---------- */
 .panel {
-  width: 220px;
-  padding: 14px 14px 18px;
+  width: 200px;
+  padding: 10px 12px 12px;
   background: linear-gradient(180deg, rgba(10,12,30,0.9), rgba(4,6,16,0.9));
   border: 1px solid var(--neon-blue);
   border-radius: 10px;
@@ -194,7 +194,7 @@ kbd {
 
 /* ---------- Recent words ---------- */
 .recent-words {
-  max-height: 180px;
+  max-height: 120px;
   overflow-y: auto;
   padding: 6px 8px;
   font-size: 12px;
