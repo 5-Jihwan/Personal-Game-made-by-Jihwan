@@ -32,6 +32,73 @@ function cacheDom() {
   ui.bgmBtn = document.getElementById('bgmBtn');
   ui.sfxBtn = document.getElementById('sfxBtn');
   ui.dictStatus = document.getElementById('dictStatus');
+  ui.bestScore = document.getElementById('bestScore');
+  ui.ranking = document.getElementById('ranking');
+  ui.nameInputRow = document.getElementById('nameInputRow');
+  ui.nameInput = document.getElementById('nameInput');
+  ui.saveScoreBtn = document.getElementById('saveScoreBtn');
+}
+
+// ============================================================
+// 랭킹 (localStorage 기반, 디바이스 별 영구 저장)
+// ============================================================
+const RANK_KEY = 'neon-hangul-ranking-v1';
+const NAME_KEY = 'neon-hangul-last-name';
+const RANK_LIMIT = 20;
+
+function loadRanking() {
+  try {
+    const raw = localStorage.getItem(RANK_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) { return []; }
+}
+
+function saveRanking(list) {
+  try { localStorage.setItem(RANK_KEY, JSON.stringify(list.slice(0, RANK_LIMIT))); }
+  catch (e) { console.warn('[rank] save failed', e); }
+}
+
+function addToRanking(name, score) {
+  const list = loadRanking();
+  list.push({
+    name: name.slice(0, 10),
+    score,
+    date: new Date().toISOString().slice(0, 10),
+  });
+  list.sort((a, b) => b.score - a.score);
+  saveRanking(list);
+  return list;
+}
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+}
+
+function updateRankingUI() {
+  const list = loadRanking();
+  // 최고 점수
+  if (ui.bestScore) {
+    ui.bestScore.textContent = list[0]
+      ? list[0].score.toLocaleString()
+      : '0';
+  }
+  // 랭킹 목록 (TOP 10)
+  if (!ui.ranking) return;
+  if (list.length === 0) {
+    ui.ranking.innerHTML = '<li class="empty">— 아직 없음 —</li>';
+    return;
+  }
+  ui.ranking.innerHTML = list.slice(0, 10).map((e, i) => `
+    <li>
+      <span class="rk-rank">${i + 1}</span>
+      <span class="rk-name">${escapeHTML(e.name)}</span>
+      <span class="rk-score">${e.score.toLocaleString()}</span>
+    </li>
+  `).join('');
 }
 
 // ---------- HUD 갱신 ----------
@@ -127,6 +194,19 @@ function bindInput() {
     ui.sfxBtn.textContent = on ? 'SFX ♪' : 'SFX ✕';
   });
 
+  // 점수 저장 버튼
+  if (ui.saveScoreBtn) {
+    ui.saveScoreBtn.addEventListener('click', () => saveCurrentScore());
+  }
+  if (ui.nameInput) {
+    ui.nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveCurrentScore();
+      }
+    });
+  }
+
   bindTouchControls(ensureAudio);
 }
 
@@ -204,14 +284,41 @@ function hideOverlay() {
 }
 
 // 게임 오버 콜백 (game.js 에서 호출)
+//   점수가 0보다 크면 이름 입력 폼을 띄워 랭킹 등록 가능.
 function onGameOver() {
   sfxGameOver();
-  showOverlay('GAME OVER', `최종 점수: ${State.score.toLocaleString()}`, '다시 시작');
+  const score = State.score;
+  ui.overlayTitle.textContent = 'GAME OVER';
+  ui.overlayTitle.setAttribute('data-text', 'GAME OVER');
+  ui.overlayMsg.textContent = `최종 점수: ${score.toLocaleString()}`;
+  ui.restart.textContent = '다시 시작';
+
+  if (score > 0) {
+    const lastName = localStorage.getItem(NAME_KEY) || '';
+    ui.nameInput.value = lastName;
+    ui.nameInputRow.style.display = 'flex';
+    setTimeout(() => ui.nameInput.focus(), 100);
+  } else {
+    ui.nameInputRow.style.display = 'none';
+  }
+  ui.overlay.classList.add('show');
 }
 
 // 시작 오버레이 — 사용자 클릭으로 오디오 컨텍스트 활성화
 function showStartOverlay() {
+  ui.nameInputRow.style.display = 'none';
   showOverlay('NEON HANGUL', '클릭해서 시작 (BGM 켜기)', 'START');
+}
+
+// 점수 저장 (이름 입력 후 저장 버튼 또는 Enter)
+function saveCurrentScore() {
+  const raw = (ui.nameInput.value || '').trim();
+  const name = (raw.slice(0, 10) || '익명');
+  localStorage.setItem(NAME_KEY, name);
+  addToRanking(name, State.score);
+  updateRankingUI();
+  ui.nameInputRow.style.display = 'none';
+  ui.overlayMsg.textContent = `${name} ${State.score.toLocaleString()}점 등록 완료!`;
 }
 
 // ---------- 메인 루프 ----------
@@ -231,6 +338,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initRender();
   bindInput();
   resetGame();
+  updateRankingUI();        // 저장된 랭킹 즉시 표시
   // 일시정지 상태로 시작해서 클릭 후 시작
   State.paused = true;
   showStartOverlay();

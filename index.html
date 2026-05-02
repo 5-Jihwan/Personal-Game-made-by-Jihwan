@@ -22,9 +22,15 @@
       <div class="panel left-panel">
         <h2 class="neon-h2">SCORE</h2>
         <div class="row"><span>점수</span><b id="score" class="neon-num">0</b></div>
+        <div class="row"><span>최고</span><b id="bestScore" class="neon-num best">0</b></div>
         <div class="row"><span>레벨</span><b id="level" class="neon-num">1</b></div>
         <div class="row"><span>완성</span><b id="wordCount" class="neon-num">0</b></div>
         <div class="row"><span>동시 낙하</span><b id="dropCount" class="neon-num">1</b></div>
+
+        <h2 class="neon-h2">RANKING</h2>
+        <ol class="ranking" id="ranking">
+          <li class="empty">— 아직 없음 —</li>
+        </ol>
 
         <h2 class="neon-h2">RECENT</h2>
         <div class="recent-words" id="recentWords"></div>
@@ -102,6 +108,10 @@
     <div class="box">
       <h2 class="neon-title small" id="overlayTitle" data-text="GAME OVER">GAME OVER</h2>
       <p id="overlayMsg" class="overlay-msg">최종 점수: 0</p>
+      <div class="name-row" id="nameInputRow" style="display:none;">
+        <input id="nameInput" type="text" placeholder="이름 (최대 10자)" maxlength="10" autocomplete="off" />
+        <button id="saveScoreBtn" class="neon-btn small">저장</button>
+      </div>
       <button id="restartBtn" class="neon-btn">RESTART</button>
     </div>
   </div>

@@ -217,6 +217,98 @@ kbd {
   box-shadow: 0 0 4px var(--neon-cyan);
 }
 
+/* ---------- 최고 점수 / 랭킹 ---------- */
+.neon-num.best {
+  color: #fff09a;
+  text-shadow: 0 0 6px #ffcc55, 0 0 14px #ff8800;
+}
+
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 4px 6px;
+  background: rgba(0,10,25,0.55);
+  border: 1px solid rgba(0,240,255,0.25);
+  border-radius: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  counter-reset: rank;
+}
+.ranking::-webkit-scrollbar { width: 6px; }
+.ranking::-webkit-scrollbar-track { background: rgba(0,0,0,0.5); }
+.ranking::-webkit-scrollbar-thumb {
+  background: var(--neon-blue);
+  box-shadow: 0 0 4px var(--neon-cyan);
+}
+.ranking li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--neon-pale);
+  text-shadow: 0 0 4px var(--neon-cyan);
+}
+.ranking li.empty {
+  opacity: 0.4;
+  font-style: italic;
+  text-shadow: none;
+}
+.ranking .rk-rank {
+  flex: 0 0 auto;
+  width: 22px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: var(--neon-cyan);
+}
+.ranking .rk-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ranking .rk-score {
+  flex: 0 0 auto;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: #fff09a;
+  text-shadow: 0 0 4px #ff8800;
+}
+.ranking li:nth-child(1) .rk-rank { color: #ffd84a; text-shadow: 0 0 6px #ffaa00; }
+.ranking li:nth-child(2) .rk-rank { color: #c8d8e8; }
+.ranking li:nth-child(3) .rk-rank { color: #d8a07a; }
+
+/* ---------- 이름 입력 폼 (게임 오버 오버레이) ---------- */
+.name-row {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 12px 0;
+}
+#nameInput {
+  flex: 1;
+  max-width: 180px;
+  padding: 8px 10px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  color: var(--neon-pale);
+  background: rgba(0,10,25,0.85);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  outline: none;
+  text-shadow: 0 0 4px var(--neon-cyan);
+  box-shadow: inset 0 0 8px rgba(0,240,255,0.15);
+}
+#nameInput:focus {
+  border-color: var(--neon-pale);
+  box-shadow: 0 0 8px var(--neon-cyan), inset 0 0 8px rgba(0,240,255,0.3);
+}
+.neon-btn.small {
+  padding: 8px 14px;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
 /* ---------- Items ---------- */
 .items-grid {
   display: grid;
