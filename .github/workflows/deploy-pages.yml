@@ -38,6 +38,16 @@ jobs:
           sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" index.html
           echo "Asset version: ${VERSION}"
 
+      # Firebase 설정이 GitHub Secrets 에 있다면 firebase-config.js 를 자동 주입
+      # (선택 사항 — Secrets 가 없으면 git 에 커밋된 파일을 그대로 사용)
+      - name: Inject Firebase config (optional)
+        if: env.FIREBASE_CONFIG != ''
+        env:
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+        run: |
+          echo "window.FIREBASE_CONFIG = ${FIREBASE_CONFIG};" > js/firebase-config.js
+          echo "Firebase config injected from secret"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

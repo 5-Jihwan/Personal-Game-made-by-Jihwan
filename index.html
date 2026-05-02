@@ -28,6 +28,10 @@
         <div class="row"><span>동시 낙하</span><b id="dropCount" class="neon-num">1</b></div>
 
         <h2 class="neon-h2">RANKING</h2>
+        <div class="rank-tabs">
+          <button class="rank-tab active" data-tab="local">LOCAL</button>
+          <button class="rank-tab" data-tab="global">GLOBAL</button>
+        </div>
         <ol class="ranking" id="ranking">
           <li class="empty">— 아직 없음 —</li>
         </ol>
@@ -116,6 +120,12 @@
     </div>
   </div>
 
+  <!-- Firebase SDK (글로벌 랭킹용; 설정 안 되어도 안전하게 비활성) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database-compat.js"></script>
+
+  <script src="js/firebase-config.js?v=VERSION_PLACEHOLDER"></script>
+  <script src="js/cloud.js?v=VERSION_PLACEHOLDER"></script>
   <script src="js/data.js?v=VERSION_PLACEHOLDER"></script>
   <script src="js/dict.js?v=VERSION_PLACEHOLDER"></script>
   <script src="js/audio.js?v=VERSION_PLACEHOLDER"></script>

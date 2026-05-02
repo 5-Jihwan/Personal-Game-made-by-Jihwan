@@ -34,10 +34,17 @@ function cacheDom() {
   ui.dictStatus = document.getElementById('dictStatus');
   ui.bestScore = document.getElementById('bestScore');
   ui.ranking = document.getElementById('ranking');
+  ui.rankTabs = document.querySelectorAll('.rank-tab');
   ui.nameInputRow = document.getElementById('nameInputRow');
   ui.nameInput = document.getElementById('nameInput');
   ui.saveScoreBtn = document.getElementById('saveScoreBtn');
 }
+
+// 현재 활성 탭 ('local' | 'global')
+let activeRankTab = 'local';
+// 글로벌 데이터 캐시 (실시간 구독으로 업데이트)
+let globalRankCache = [];
+let cloudUnsubscribe = null;
 
 // ============================================================
 // 랭킹 (localStorage 기반, 디바이스 별 영구 저장)
@@ -79,17 +86,21 @@ function escapeHTML(s) {
 }
 
 function updateRankingUI() {
-  const list = loadRanking();
-  // 최고 점수
+  const localList = loadRanking();
+  // 최고 점수: 로컬 + 글로벌 중 큰 값
   if (ui.bestScore) {
-    ui.bestScore.textContent = list[0]
-      ? list[0].score.toLocaleString()
-      : '0';
+    const localBest  = localList[0]  ? localList[0].score  : 0;
+    const globalBest = globalRankCache[0] ? globalRankCache[0].score : 0;
+    ui.bestScore.textContent = Math.max(localBest, globalBest).toLocaleString();
   }
-  // 랭킹 목록 (TOP 10)
   if (!ui.ranking) return;
+
+  const list = activeRankTab === 'global' ? globalRankCache : localList;
   if (list.length === 0) {
-    ui.ranking.innerHTML = '<li class="empty">— 아직 없음 —</li>';
+    const msg = activeRankTab === 'global'
+      ? (cloudIsReady() ? '— 로딩 중 —' : '— Firebase 미설정 —')
+      : '— 아직 없음 —';
+    ui.ranking.innerHTML = `<li class="empty">${msg}</li>`;
     return;
   }
   ui.ranking.innerHTML = list.slice(0, 10).map((e, i) => `
@@ -99,6 +110,24 @@ function updateRankingUI() {
       <span class="rk-score">${e.score.toLocaleString()}</span>
     </li>
   `).join('');
+}
+
+function bindRankTabs() {
+  for (const btn of ui.rankTabs) {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (tab === activeRankTab) return;
+      // 글로벌 탭은 Cloud 가 활성화된 경우에만 전환
+      if (tab === 'global' && !cloudIsReady()) {
+        // 클릭은 허용하되 안내만 표시
+        activeRankTab = 'global';
+      } else {
+        activeRankTab = tab;
+      }
+      for (const b of ui.rankTabs) b.classList.toggle('active', b === btn);
+      updateRankingUI();
+    });
+  }
 }
 
 // ---------- HUD 갱신 ----------
@@ -311,14 +340,24 @@ function showStartOverlay() {
 }
 
 // 점수 저장 (이름 입력 후 저장 버튼 또는 Enter)
-function saveCurrentScore() {
+//   로컬 랭킹은 즉시, 글로벌 랭킹은 비동기로 시도.
+async function saveCurrentScore() {
   const raw = (ui.nameInput.value || '').trim();
   const name = (raw.slice(0, 10) || '익명');
   localStorage.setItem(NAME_KEY, name);
   addToRanking(name, State.score);
   updateRankingUI();
   ui.nameInputRow.style.display = 'none';
-  ui.overlayMsg.textContent = `${name} ${State.score.toLocaleString()}점 등록 완료!`;
+
+  if (cloudIsReady()) {
+    ui.overlayMsg.textContent = `${name} ${State.score.toLocaleString()}점 등록 중...`;
+    const ok = await cloudSaveScore(name, State.score);
+    ui.overlayMsg.textContent = ok
+      ? `${name} ${State.score.toLocaleString()}점 등록 완료! (글로벌)`
+      : `${name} ${State.score.toLocaleString()}점 로컬에만 등록`;
+  } else {
+    ui.overlayMsg.textContent = `${name} ${State.score.toLocaleString()}점 등록 완료!`;
+  }
 }
 
 // ---------- 메인 루프 ----------
@@ -338,7 +377,22 @@ window.addEventListener('DOMContentLoaded', () => {
   initRender();
   bindInput();
   resetGame();
-  updateRankingUI();        // 저장된 랭킹 즉시 표시
+  bindRankTabs();
+  updateRankingUI();        // 로컬 랭킹 즉시 표시
+
+  // 글로벌 랭킹 (Firebase) 초기화 + 실시간 구독
+  if (cloudInit()) {
+    cloudUnsubscribe = cloudSubscribeTopScores(20, (list) => {
+      globalRankCache = list;
+      updateRankingUI();
+    });
+  } else {
+    // Firebase 미설정이면 GLOBAL 탭 비활성 표시
+    for (const b of ui.rankTabs) {
+      if (b.dataset.tab === 'global') b.title = 'Firebase 미설정';
+    }
+  }
+
   // 일시정지 상태로 시작해서 클릭 후 시작
   State.paused = true;
   showStartOverlay();

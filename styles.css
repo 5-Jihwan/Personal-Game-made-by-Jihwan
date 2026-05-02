@@ -278,6 +278,38 @@ kbd {
 .ranking li:nth-child(2) .rk-rank { color: #c8d8e8; }
 .ranking li:nth-child(3) .rk-rank { color: #d8a07a; }
 
+/* ---------- 랭킹 탭 ---------- */
+.rank-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.rank-tab {
+  flex: 1;
+  padding: 4px 0;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  background: rgba(0,10,25,0.5);
+  border: 1px solid rgba(0,240,255,0.25);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.rank-tab:hover { color: var(--neon-pale); }
+.rank-tab.active {
+  color: var(--neon-pale);
+  background: rgba(0,60,140,0.6);
+  border-color: var(--neon-cyan);
+  text-shadow: 0 0 4px var(--neon-cyan);
+  box-shadow: 0 0 6px rgba(0,240,255,0.4);
+}
+.rank-tab[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ---------- 이름 입력 폼 (게임 오버 오버레이) ---------- */
 .name-row {
   display: flex;
