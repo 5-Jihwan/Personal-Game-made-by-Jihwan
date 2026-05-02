@@ -141,7 +141,27 @@ function drawNeonCell(r, c, ch, isActive) {
 // ---------- 오버레이 ----------
 function drawOverlayEffects() {
   if (State.stopTimer > 0) drawStopOverlay();
+  if (State.comboFlash > 0 && State.lastCombo >= 2) drawComboOverlay();
   if (State.paused) drawPauseOverlay();
+}
+
+function drawComboOverlay() {
+  const t = State.comboFlash / 1200; // 1 → 0
+  const scale = 1 + (1 - t) * 0.8;
+  const alpha = Math.min(1, t * 1.6);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.scale(scale, scale);
+  ctx.font = `bold 48px 'Orbitron', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = '#ff5fe0';
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = '#fff8ff';
+  ctx.fillText(`COMBO ×${State.lastCombo}`, 0, 0);
+  ctx.restore();
+  ctx.shadowBlur = 0;
 }
 
 function drawStopOverlay() {

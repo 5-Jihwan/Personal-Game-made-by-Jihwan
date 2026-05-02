@@ -29,6 +29,9 @@ function cacheDom() {
   ui.overlayTitle = document.getElementById('overlayTitle');
   ui.overlayMsg = document.getElementById('overlayMsg');
   ui.restart = document.getElementById('restartBtn');
+  ui.bgmBtn = document.getElementById('bgmBtn');
+  ui.sfxBtn = document.getElementById('sfxBtn');
+  ui.dictStatus = document.getElementById('dictStatus');
 }
 
 // ---------- HUD 갱신 ----------
@@ -60,19 +63,30 @@ function updateHUD() {
 
 // ---------- 입력 ----------
 function bindInput() {
+  // 첫 입력 시 오디오 컨텍스트 활성화 (브라우저 자동재생 정책)
+  const ensureAudio = () => audioInit();
+
   document.addEventListener('keydown', (e) => {
+    ensureAudio();
     if (State.gameOver) return;
 
     switch (e.key) {
-      case 'ArrowLeft':  moveActive(0, -1); e.preventDefault(); break;
-      case 'ArrowRight': moveActive(0,  1); e.preventDefault(); break;
+      case 'ArrowLeft':
+        if (moveActive(0, -1)) sfxMove();
+        e.preventDefault();
+        break;
+      case 'ArrowRight':
+        if (moveActive(0, 1)) sfxMove();
+        e.preventDefault();
+        break;
       case 'ArrowDown':
-        if (!moveActive(1, 0)) landActive();
+        if (!moveActive(1, 0)) { landActive(); sfxLand(); }
         State.lastFall = performance.now();
         e.preventDefault();
         break;
       case ' ':
         hardDrop();
+        sfxLand();
         e.preventDefault();
         break;
       case 'p':
@@ -87,12 +101,37 @@ function bindInput() {
   });
 
   for (const t of ['cho', 'jung', 'stop', 'wild']) {
-    ui.itemBtns[t].addEventListener('click', () => useItem(t));
+    ui.itemBtns[t].addEventListener('click', () => {
+      ensureAudio();
+      useItem(t);
+    });
   }
   ui.restart.addEventListener('click', () => {
+    ensureAudio();
     hideOverlay();
     resetGame();
   });
+
+  if (ui.bgmBtn) ui.bgmBtn.addEventListener('click', () => {
+    ensureAudio();
+    const on = toggleBGM();
+    ui.bgmBtn.classList.toggle('off', !on);
+    ui.bgmBtn.textContent = on ? 'BGM ♪' : 'BGM ✕';
+  });
+  if (ui.sfxBtn) ui.sfxBtn.addEventListener('click', () => {
+    ensureAudio();
+    const on = toggleSFX();
+    ui.sfxBtn.classList.toggle('off', !on);
+    ui.sfxBtn.textContent = on ? 'SFX ♪' : 'SFX ✕';
+  });
+}
+
+// ---------- 게임 이벤트 콜백 ----------
+function onWordCleared(len, combo) {
+  sfxClear(combo, len);
+}
+function onCombo(combo) {
+  if (combo >= 2) sfxCombo(combo);
 }
 
 // ---------- 오버레이 제어 ----------
@@ -109,6 +148,7 @@ function hideOverlay() {
 
 // 게임 오버 콜백 (game.js 에서 호출)
 function onGameOver() {
+  sfxGameOver();
   showOverlay('GAME OVER', `최종 점수: ${State.score.toLocaleString()}`);
 }
 
@@ -128,5 +168,18 @@ window.addEventListener('DOMContentLoaded', () => {
   bindInput();
   resetGame();
   hideOverlay();
+  updateDictStatus();
   requestAnimationFrame(loop);
 });
+
+function updateDictStatus() {
+  if (!ui.dictStatus) return;
+  const full = window.DICT_SETS_FULL;
+  if (!full) {
+    ui.dictStatus.textContent = '기본 사전 (소형)';
+    return;
+  }
+  let n = 0;
+  for (const k of Object.keys(full)) n += full[k].size;
+  ui.dictStatus.textContent = `표준국어대사전 ${n.toLocaleString()}개`;
+}

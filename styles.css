@@ -341,3 +341,31 @@ kbd {
     0 0 28px var(--neon-blue),
     inset 0 0 12px rgba(0,240,255,0.3);
 }
+
+/* ---------- Audio toggle ---------- */
+.audio-row {
+  display: flex;
+  gap: 6px;
+}
+.audio-btn {
+  flex: 1;
+  padding: 6px 4px;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--neon-pale);
+  background: rgba(0,20,50,0.6);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  cursor: pointer;
+  text-shadow: 0 0 4px var(--neon-cyan);
+  box-shadow: 0 0 4px rgba(0,240,255,0.4);
+  transition: all 0.15s;
+}
+.audio-btn:hover { background: rgba(0,40,90,0.9); }
+.audio-btn.off {
+  color: #5a6a78;
+  border-color: #2a3540;
+  text-shadow: none;
+  box-shadow: none;
+}

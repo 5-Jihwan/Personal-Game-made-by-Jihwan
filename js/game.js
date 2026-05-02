@@ -22,6 +22,9 @@ const State = {
   gameOver: false,
   recentWords: [],
   items: { ...INIT_ITEMS },
+  combo: 0,           // 한 번의 착지에서 연쇄 매칭 카운트
+  comboFlash: 0,      // 콤보 표시 잔여 시간(ms)
+  lastCombo: 0,       // 마지막 콤보 수치 (UI 표시용)
 };
 
 // ---------- 초기화 / 리셋 ----------
@@ -39,7 +42,20 @@ function resetGame() {
   State.gameOver = false;
   State.recentWords = [];
   State.items = { ...INIT_ITEMS };
+  State.combo = 0;
+  State.comboFlash = 0;
+  State.lastCombo = 0;
   spawn();
+}
+
+// ---------- 사전 매칭에 사용할 Set 선택 ----------
+// dict.js 가 로드되면 거대한 표준국어대사전 Set을 사용하고,
+// 아니면 data.js 의 작은 기본 사전으로 폴백.
+function getDictSets() {
+  return window.DICT_SETS_FULL || DICT_SETS;
+}
+function getDictLengths() {
+  return window.DICT_LENGTHS_FULL || DICT_LENGTHS;
 }
 
 // ---------- 블록 스폰 ----------
@@ -135,7 +151,7 @@ function matchAt(row, startCol, len) {
     s += ch;
   }
 
-  const set = DICT_SETS[len];
+  const set = getDictSets()[len];
   if (!set) return null;
 
   // 만능 글자(★)가 포함된 경우, 사전에서 패턴 매칭
@@ -154,15 +170,19 @@ function matchAt(row, startCol, len) {
 }
 
 function checkWords() {
+  // 한 번의 착지로 발생하는 연쇄는 하나의 콤보로 묶음
+  State.combo = 0;
   let cleared = false;
   do {
     cleared = false;
+    const lengths = getDictLengths();
     outer:
     for (let r = 0; r < ROWS; r++) {
-      for (const len of DICT_LENGTHS) {
+      for (const len of lengths) {
         for (let c = 0; c <= COLS - len; c++) {
           const word = matchAt(r, c, len);
           if (word) {
+            State.combo++;
             clearMatch(r, c, len, word);
             cleared = true;
             break outer;
@@ -172,19 +192,33 @@ function checkWords() {
     }
     if (cleared) applyGravity();
   } while (cleared);
+
+  if (State.combo > 0) {
+    State.lastCombo = State.combo;
+    State.comboFlash = 1200; // 1.2초 콤보 표시
+    if (typeof onCombo === 'function') onCombo(State.combo);
+  }
 }
 
+// 점수 공식:
+//   각 음절당 10점, 단어 길이가 길어질수록 음절당 +10점씩 가산.
+//     길이 L 일 때 음절당 점수 = 10 * L
+//     단어 점수 (1콤보) = L * (10 * L) = 10 * L^2
+//   콤보 보너스: combo번째 매칭은 × combo 배.
 function clearMatch(row, col, len, word) {
   for (let k = 0; k < len; k++) State.grid[row][col + k] = null;
 
-  const points = len * len * 100;
+  const base = 10 * len * len;
+  const points = base * State.combo; // 1콤보=×1, 2콤보=×2 ...
   State.score += points;
   State.wordCount++;
 
-  State.recentWords.unshift(`${word} +${points}`);
+  const tag = State.combo > 1 ? ` (×${State.combo})` : '';
+  State.recentWords.unshift(`${word}${tag} +${points}`);
   if (State.recentWords.length > RECENT_LIMIT) State.recentWords.pop();
 
   rewardItems(len);
+  if (typeof onWordCleared === 'function') onWordCleared(len, State.combo);
 }
 
 function applyGravity() {
@@ -264,8 +298,14 @@ function tickGame(now) {
   if (State.gameOver) return;
   if (State.paused) return;
 
+  const dt = now - State.lastTickTime;
+  if (State.comboFlash > 0) {
+    State.comboFlash -= dt;
+    if (State.comboFlash < 0) State.comboFlash = 0;
+  }
+
   if (State.stopTimer > 0) {
-    State.stopTimer -= now - State.lastTickTime;
+    State.stopTimer -= dt;
     if (State.stopTimer < 0) State.stopTimer = 0;
     return;
   }
