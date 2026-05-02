@@ -31,6 +31,13 @@ jobs:
         with:
           enablement: true
 
+      # 캐시 버스팅: 모든 자산 URL 의 ?v=VERSION_PLACEHOLDER 를 커밋 해시로 치환
+      - name: Cache-bust assets
+        run: |
+          VERSION="${GITHUB_SHA::8}-$(date +%s)"
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" index.html
+          echo "Asset version: ${VERSION}"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
